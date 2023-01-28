@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform:
+  - AWS::SecretsManager-2020-07-23
+  - AWS::Serverless-2016-10-31
+Description: >-
+  RDS KMS Key and Secrets
+
+Parameters:
+  orgUnit:
+    Type: String
+    Default: jj
+  envType:
+    Type: String
+    Default: dev
+  appCode:
+    Type: String
+    Default: rds-infra
+
+Conditions:
+  IsEast: !Equals [!Ref "AWS::Region", "us-east-1"]
+
+Resources:
+  ##KMS Key for RDS Encryption
+  RdsKmsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      Description: !Sub ${orgUnit}-kms-${envType}-${appCode}
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:          
+          - Sid: Allow access for PG ECS IAMs
+            Effect: Allow
+            Principal:
+              AWS:
+                "*"
+            Condition:
+              StringLike: 
+                'aws:PrincipalArn': !Sub arn:aws:iam::${AWS::AccountId}:role/adf-auth-database-${envType}-Pwd-SecretsManager*
+            Action:
+              - kms:CancelKeyDeletion
+              - kms:Create*
+              - kms:CreateGrant
+              - kms:Delete*
+              - kms:Describe*
+              - kms:Disable*
+              - kms:Enable*
+              - kms:Encrypt
+              - kms:Get*
+              - kms:List*
+              - kms:ListGrants
+              - kms:Put*
+              - kms:ReEncrypt*
+              - kms:Revoke*
+              - kms:RevokeGrant
+              - kms:ScheduleKeyDeletion
+              - kms:TagResource
+              - kms:UntagResource
+              - kms:Update*
+              - kms:ListAliases
+              - kms:RequestAlias
+              - kms:ResourceAliases
+              - kms:Decrypt
+              - kms:GenerateDataKey
+              - kms:GetKeyPolicy
+            Resource: "*"  
+
+  RdsKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub alias/${orgUnit}-${appCode}-kms-key
+      TargetKeyId: !Ref RdsKmsKey
+
+  RootUserSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: IsEast
+    Properties:
+      Name: /auth/secret/rds/pgadmin
+      Description: Aurora PostgreSQL Master User (pgadmin) Secret
+      KmsKeyId: !Ref RdsKmsKey
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username": "pgadmin"}'
+        GenerateStringKey: "password"
+        ExcludeCharacters: '"@/\'
+        PasswordLength: 16
+      ReplicaRegions:
+        - Region: us-west-2
+
+  LambdaUserSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: IsEast
+    Properties:
+      Name: /auth/secret/rds/pguser
+      Description: Application user pguser Secret
+      KmsKeyId: !Ref RdsKmsKey
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username": "lambdauser"}'
+        GenerateStringKey: "password"
+        ExcludeCharacters: '"@/\'
+        PasswordLength: 16
+      ReplicaRegions:
+        - Region: us-west-2
+
+
+  RdsGlobalClusterSeqNumber:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /auth/rds/global/cluster/seqnumber
+      Type: String
+      Value: 1
+      Description: The RDS Global Cluster Seq Number
+
+
+Outputs:
+  RdsKmsKeyArn:
+    Description: The RDS KMS Key for Secret/Db encryption
+    Value: !GetAtt RdsKmsKey.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-kms-key
+
+  RootUserSecretArn:
+    Description: The Master User Secret
+    Condition: IsEast
+    Value: !Ref RootUserSecret
+    Export:
+      Name: !Sub ${AWS::StackName}-root-secret
+
+  LambdaUserSecretArn:
+    Description: The pguser Secret
+    Condition: IsEast
+    Value: !Ref LambdaUserSecret
+    Export:
+      Name: !Sub ${AWS::StackName}-lambdauser-secret
+
+
+
+
+
