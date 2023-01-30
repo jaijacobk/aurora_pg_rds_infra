@@ -31,7 +31,7 @@
 
 #### This will create the following
 1. A new cluster which will be added to the Global Cluster created in the West (above step)
-2. Two READERinstances of the databae in the east
+2. Two READER instances of the databae in the east
 
 ### Step5 (Fail to East and make the East Primary)
 1. Fail the global cluster to East to flip the writer from West to East (you can do it from the console or via a Lambda)
@@ -40,6 +40,7 @@
 ### Step5 (Detach and Promote West in the event of an East failure)
 1. Use the detach and promote to make the West the primary (you can do it from the console or via a Lambda)
 2. Once the detach is complete, your applicaiton can use the West end point to connect to the database
+3. This will create a standalone database in the WEST and the replication between the regions will stop at this moment
 
 ### Step6 (Fallback to East)
 1. Delete the East Stack (do it from the cloudformation)
