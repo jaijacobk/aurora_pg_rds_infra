@@ -40,12 +40,12 @@
 
 ### Step5 (Detach and Promote West in the event of an East failure)
 1. Use the detach and promote to make the West the primary (you can do it from the console or via a Lambda)
-2. Once the detach is complete, your applicaiton can use the West end point to connect to the database
+2. Once the detach is complete, your application can use the West end point to connect to the database
 3. This will create a standalone database in the WEST and the replication between the regions will stop at this moment
 
 ### Step6 (Fallback to East)
 1. Delete the East Stack (do it from the cloudformation)
-2. Change the name of the global cluster (please check the parameter RdsGlobalClusterName in east and west. You may add a -1 to make it unique)
+2. Change the name of the global cluster (please check the parameter RdsGlobalClusterName in east and west. You may add a -2 to make it unique)
 3. Update the West Cloudformation stack
 
 aws cloudformation update-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-west.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM
