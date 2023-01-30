@@ -3,12 +3,12 @@ Transform:
   - AWS::SecretsManager-2020-07-23
   - AWS::Serverless-2016-10-31
 Description: >-
-  RDS KMS Key and Secrets
+  Aurora Postgres Database KMS Key and Secrets
 
 Parameters:
   orgUnit:
     Type: String
-    Default: jj
+    Default: demo
   envType:
     Type: String
     Default: dev
@@ -34,9 +34,9 @@ Resources:
             Principal:
               AWS:
                 "*"
-            Condition:
-              StringLike: 
-                'aws:PrincipalArn': !Sub arn:aws:iam::${AWS::AccountId}:role/adf-auth-database-${envType}-Pwd-SecretsManager*
+            # Condition:
+            #   StringLike: 
+            #     'aws:PrincipalArn': !Sub arn:aws:iam::${AWS::AccountId}:role/adf-auth-database-${envType}-Pwd-SecretsManager*
             Action:
               - kms:CancelKeyDeletion
               - kms:Create*
@@ -75,7 +75,7 @@ Resources:
     Type: AWS::SecretsManager::Secret
     Condition: IsEast
     Properties:
-      Name: /auth/secret/rds/pgadmin
+      Name: /demo/secret/rds/pgadmin
       Description: Aurora PostgreSQL Master User (pgadmin) Secret
       KmsKeyId: !Ref RdsKmsKey
       GenerateSecretString:
@@ -90,8 +90,8 @@ Resources:
     Type: AWS::SecretsManager::Secret
     Condition: IsEast
     Properties:
-      Name: /auth/secret/rds/pguser
-      Description: Application user pguser Secret
+      Name: /demo/secret/rds/lambdauser
+      Description: Application user lambdauser Secret
       KmsKeyId: !Ref RdsKmsKey
       GenerateSecretString:
         SecretStringTemplate: !Sub '{"username": "lambdauser"}'
@@ -105,34 +105,69 @@ Resources:
   RdsGlobalClusterSeqNumber:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /auth/rds/global/cluster/seqnumber
+      Name: /demo/rds/global/cluster/seqnumber
       Type: String
       Value: 1
       Description: The RDS Global Cluster Seq Number
 
-
-Outputs:
   RdsKmsKeyArn:
-    Description: The RDS KMS Key for Secret/Db encryption
-    Value: !GetAtt RdsKmsKey.Arn
-    Export:
-      Name: !Sub ${AWS::StackName}-kms-key
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /demo/rds/kmskey/arn
+      Type: String
+      Value: !GetAtt RdsKmsKey.Arn
+      Description: The RDS KMS Key for Secret/Db encryption
 
   RootUserSecretArn:
-    Description: The Master User Secret
+    Type: AWS::SSM::Parameter
     Condition: IsEast
-    Value: !Ref RootUserSecret
-    Export:
-      Name: !Sub ${AWS::StackName}-root-secret
+    Properties:
+      Name: /demo/rds/pgadmin/secret
+      Type: String
+      Value: !Ref RootUserSecret
+      Description: The Master User Secret
 
   LambdaUserSecretArn:
-    Description: The pguser Secret
+    Type: AWS::SSM::Parameter
     Condition: IsEast
-    Value: !Ref LambdaUserSecret
-    Export:
-      Name: !Sub ${AWS::StackName}-lambdauser-secret
+    Properties:
+      Name: /demo/rds/lambdauser/secret
+      Type: String
+      Value: !Ref LambdaUserSecret
+      Description: The lambdauser Secret
+
+  LambdaSecurityGroupHttps:
+    Type: AWS::EC2::SecurityGroup
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W5
+            reason: "need open to world for various reasons"
+          - id: W28
+            reason: "Explicit name is required allow manual monitoring of event firing"
+          - id: W36
+            reason: "Group Rule Descriptions are defined in GroupDescription"
+          - id: W42
+            reason: "not a valid warning according to Oleg"
+    Properties:
+      GroupDescription: Common Security group for all the Lambda Functions
+      GroupName: !Sub ${orgUnit}-security-group-${envType}-${appCode}-lambda-https
+      VpcId: !ImportValue inf-vpc
+      SecurityGroupIngress:
+        - IpProtocol: "-1"
+          CidrIp: 127.0.0.1/32
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
 
 
-
-
+  LambdaSecurityGroupHttpsID:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /demo/sg/lambda-security-group-https
+      Type: String
+      Value: !Ref LambdaSecurityGroupHttps
+      Description: A common Security group for all Lambda functions
 

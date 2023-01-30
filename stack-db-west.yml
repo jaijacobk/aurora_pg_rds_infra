@@ -1,0 +1,235 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform:
+  - AWS::Serverless-2016-10-31
+Description: >-
+  Indgo Aurora Postgres Database West Nested Stack 
+
+Parameters:
+  orgUnit:
+    Type: String
+    Default: demo
+  envType:
+    Type: String
+    Default: dev
+  appCode:
+    Type: String
+    Default: rds-infra
+  ## Ingres IPs
+  IngresSample:
+    Type: String
+    Default: 149.79.50.0/24
+
+  ## Db related. Defining here
+  DBName: 
+    Type: String
+    Default: 'demo_db'
+  DBUsername:
+    Type: String
+    Default: 'pgadmin'
+  DBEngineVersion:
+    Type: String
+    Default: '14.5'
+  DBInstanceClass:
+    Type: String
+    Default: 'db.r6g.large'
+  ParameterGroup:
+    Type: String
+    Default: aurora-postgresql14
+#RDSCluster Parameter Values
+  sharedBuffers:
+    Type: String
+    Default: '131072'
+  walBuffers:
+    Type: String
+    Default: '4096'
+  workMem: 
+    Type: String
+    Default: '65536'
+  maintenanceWorkMem:
+    Type: String
+    Default: '524288'
+  logicalDecodingWorkMem:
+    Type: String
+    Default: '524288'
+  DBClusterPort:
+    Type: String
+    Default: 5432
+  RdsGlobalClusterName:
+    Type: String
+    Default: demo-global-cluster 
+  DBClusterIdentifier:
+    Type: String
+    Default: us-west-2-cluster
+  PreferredMaintenanceWindow:
+    Description: '2AM EST'
+    Type: String
+    Default: 'sat:07:00-sat:07:30'
+
+Resources:
+  #A parameter group acts as a container for engine configuration values that are applied to one or more DB instances
+  RdsInstanceParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: Instance parameters.
+      Family: !Ref ParameterGroup
+
+  #A DB cluster parameter group acts as a container for engine configuration values that are applied to every DB instance in an Aurora DB cluster
+  RdsClusterParameterGroup:
+    Type: AWS::RDS::DBClusterParameterGroup
+    Properties:
+      Description: Cluster parameters.
+      Family: !Ref ParameterGroup
+      Parameters:
+        array_nulls: true
+        rds.force_ssl: 1
+        shared_buffers: !Ref sharedBuffers
+        wal_buffers: !Ref walBuffers
+        work_mem: !Ref workMem
+        maintenance_work_mem: !Ref maintenanceWorkMem
+        logical_decoding_work_mem: !Ref logicalDecodingWorkMem
+        timezone: US/Eastern
+
+  RdsSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Database subnet group
+      SubnetIds: !Split
+        - ','
+        - Fn::ImportValue: inf-RestrictedSubnets
+
+  RdsCluster:
+    Type: AWS::RDS::DBCluster
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: F26
+            reason: 'StorageEncrypted missing nag erroneously triggered when restoring from snapshot'
+          - id: E2520
+            reason: 'MasterUsername and MasterUserPassword incorrectly flagged'
+    Properties:
+      BackupRetentionPeriod: 7
+      DatabaseName: !Ref DBName
+      DBClusterIdentifier: !Ref DBClusterIdentifier
+      DBClusterParameterGroupName: !Ref RdsClusterParameterGroup
+      DBSubnetGroupName: !Ref RdsSubnetGroup
+      DeletionProtection: false
+      Engine: aurora-postgresql
+      EngineMode: provisioned # “global” isn’t required for Aurora PostgreSQL
+      EngineVersion: !Ref DBEngineVersion
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword:
+        !Join [
+          '',
+          [
+            '{{resolve:secretsmanager:',
+            '/demo/secret/rds/pgadmin',
+            ':SecretString:password}}',
+          ],
+        ]
+
+      # End comment if restoring from snapshot.
+      KmsKeyId: '{{resolve:ssm:/demo/rds/kmskey/arn}}'
+      Port: !Ref DBClusterPort
+      StorageEncrypted: true
+      VpcSecurityGroupIds:
+        - !Ref RdsClusterSecurityGroup
+      # PreferredBackupWindow: !Ref PreferredBackupWindow
+      
+  GlobalDBCluster:
+    Type: AWS::RDS::GlobalCluster
+    Properties:
+      GlobalClusterIdentifier: !Sub ${RdsGlobalClusterName}
+      SourceDBClusterIdentifier: !Ref RdsCluster
+
+  RdsInstance1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AvailabilityZone: !Sub '${AWS::Region}a'
+      DBClusterIdentifier: !Ref RdsCluster
+      DBInstanceClass: !Ref DBInstanceClass
+      EnablePerformanceInsights: true
+      Engine: aurora-postgresql
+      EngineVersion: !Ref DBEngineVersion
+      DBParameterGroupName: !Ref RdsInstanceParameterGroup
+      PubliclyAccessible: false
+      PromotionTier: 1
+      AutoMinorVersionUpgrade: true
+      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
+
+  RdsInstance2:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AvailabilityZone: !Sub '${AWS::Region}b'
+      DBClusterIdentifier: !Ref RdsCluster
+      DBInstanceClass: !Ref DBInstanceClass
+      EnablePerformanceInsights: true
+      Engine: aurora-postgresql
+      EngineVersion: !Ref DBEngineVersion
+      DBParameterGroupName: !Ref RdsInstanceParameterGroup
+      PubliclyAccessible: false
+      AutoMinorVersionUpgrade: true
+      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
+
+  RdsClusterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W27
+            reason: 'Mapping triggers error'
+          - id: W29
+            reason: 'Mapping triggers error'
+    Properties:
+      GroupDescription: Enable access to the RDS DB
+      VpcId:
+        Fn::ImportValue: inf-vpc
+
+  SecurityGroupEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: 'For connections to data centers'
+      DestinationSecurityGroupId: !GetAtt 'RdsClusterSecurityGroup.GroupId'
+      GroupId: !GetAtt 'RdsClusterSecurityGroup.GroupId'
+      IpProtocol: tcp
+      FromPort: !Ref DBClusterPort
+      ToPort: !Ref DBClusterPort
+
+  IngresSampleRule:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: ADC
+      GroupId: !GetAtt 'RdsClusterSecurityGroup.GroupId'
+      IpProtocol: tcp
+      FromPort: !Ref DBClusterPort
+      ToPort: !Ref DBClusterPort
+      CidrIp: !Ref IngresSample
+
+      
+  SGIngresLambdas:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: allow traffic from LambdaSecurityGroup
+      GroupId: !GetAtt RdsClusterSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: !Ref DBClusterPort
+      ToPort: !Ref DBClusterPort
+      SourceSecurityGroupId: '{{resolve:ssm:/demo/sg/lambda-security-group-https}}' 
+
+
+  #### Parameter Store Export Starts Here ######
+  WriterEndpoint:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /demo/rds/writer-end-point
+      Type: String
+      Value: !GetAtt RdsCluster.Endpoint.Address
+      Description: The RDS Writer End Point from the Primary
+
+  ReaderEndpoint:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /demo/rds/reader-end-point
+      Type: String
+      Value: !GetAtt RdsCluster.ReadEndpoint.Address
+      Description: The RDS Reader End Point from the Primary
+
