@@ -50,7 +50,7 @@ Parameters:
     Default: 5432
   RdsGlobalClusterName:
     Type: String
-    Default: demo-global-cluster
+    Default: demo-global-cluster-1
   DBClusterIdentifier:
     Type: String
     Default: us-east-1-cluster
