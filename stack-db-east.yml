@@ -48,9 +48,6 @@ Parameters:
   DBClusterPort:
     Type: String
     Default: 5432
-  RdsGlobalClusterName:
-    Type: String
-    Default: demo-global-cluster
   DBClusterIdentifier:
     Type: String
     Default: the-east-cluster
@@ -112,7 +109,7 @@ Resources:
       Engine: aurora-postgresql
       EngineMode: provisioned # “global” isn’t required for Aurora PostgreSQL
       EngineVersion: !Ref DBEngineVersion
-      GlobalClusterIdentifier: !Sub ${RdsGlobalClusterName}
+      GlobalClusterIdentifier: '{{resolve:ssm:/demo/rds/global/cluster/name}}'
       SourceRegion: us-west-2
       KmsKeyId: '{{resolve:ssm:/demo/rds/kmskey/arn}}'
       Port: !Ref DBClusterPort
@@ -136,20 +133,20 @@ Resources:
       AutoMinorVersionUpgrade: true
       PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
 
-  # RdsInstance2:
-  #   Type: AWS::RDS::DBInstance
-  #   Properties:
-  #     AvailabilityZone: !Sub '${AWS::Region}b'
-  #     DBClusterIdentifier: !Ref RdsCluster
-  #     DBInstanceClass: !Ref DBInstanceClass
-  #     EnablePerformanceInsights: true
-  #     Engine: aurora-postgresql
-  #     EngineVersion: !Ref DBEngineVersion
-  #     DBParameterGroupName: !Ref RdsInstanceParameterGroup
-  #     PubliclyAccessible: false
-  #     PromotionTier: 2
-  #     AutoMinorVersionUpgrade: true
-  #     PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
+  RdsInstance2:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AvailabilityZone: !Sub '${AWS::Region}b'
+      DBClusterIdentifier: !Ref RdsCluster
+      DBInstanceClass: !Ref DBInstanceClass
+      EnablePerformanceInsights: true
+      Engine: aurora-postgresql
+      EngineVersion: !Ref DBEngineVersion
+      DBParameterGroupName: !Ref RdsInstanceParameterGroup
+      PubliclyAccessible: false
+      PromotionTier: 2
+      AutoMinorVersionUpgrade: true
+      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
 
   RdsClusterSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -193,7 +190,7 @@ Resources:
       IpProtocol: tcp
       FromPort: !Ref DBClusterPort
       ToPort: !Ref DBClusterPort
-      SourceSecurityGroupId: '{{resolve:ssm:/demo/sg/lambda-security-group}}' 
+      SourceSecurityGroupId: '{{resolve:ssm:/demo/rds/sg/lambda-security-group}}' 
 
   ##This is only needed where the Secret Lives (US-EAST-1)
   RotLambdaSecrMgrIngress:
