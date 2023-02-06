@@ -1,4 +1,8 @@
-# How to Build the Aurora Postgres Global Database (Multi Region)
+# How to Build the Multi Regional Aurora Postgres Global Database With an Automatic Failover and Fallback
+
+Aurora Global Database supports managed planned failovers, you can manually invoke a process that promotes one of the existing secondary regions to be the new primary region. A managed planned failover, however, requires a healthy global database cluster. 
+An unplanned event occurs when the primary region becomes unhealthy. There is no AWS-orchestrated automated solution available to promote the secondary region and bring the database up and running. This project illustrates a way of achieving this by building the stacks in a certain way along with a series of Lambdas and a step function  
+
 
 ### Step1 (Build the stack-infra in both regions)
 
@@ -7,7 +11,7 @@
 
 #### This will create the following
 1. A custom KMS Key for the database encryption and for the secret manager encryption
-2. Two secret manger entries. One for the root user 'pgadmin' and another user called 'lambdauser' for the applications
+2. Two secret manager entries. One for the root user 'pgadmin' and another user called 'lambdauser' for the applications
 3. A security group called 'LambdaSecurityGroupHttps' for the Lambdas to manage 443 traffic
 
 ### Step2 (Build the stack-iam in both regions)
@@ -16,7 +20,7 @@
 2.  aws cloudformation create-stack --stack-name aurora-pg-rds-iam --template-body file://stack-iam.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM
 
 #### This will create the following
-1. A an IAM role all your Lambdas to connect to the database
+1. An IAM role for all your Lambdas to connect to the database
 
 ### Step3 (Build the stack-db-west in us-west-2)
 
