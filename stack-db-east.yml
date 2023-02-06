@@ -50,10 +50,10 @@ Parameters:
     Default: 5432
   RdsGlobalClusterName:
     Type: String
-    Default: demo-global-cluster-1
+    Default: demo-global-cluster
   DBClusterIdentifier:
     Type: String
-    Default: the-primary-cluster
+    Default: the-east-cluster
   PreferredMaintenanceWindow:
     Description: '2AM EST'
     Type: String
@@ -193,7 +193,7 @@ Resources:
       IpProtocol: tcp
       FromPort: !Ref DBClusterPort
       ToPort: !Ref DBClusterPort
-      SourceSecurityGroupId: '{{resolve:ssm:/demo/sg/lambda-security-group-https}}' 
+      SourceSecurityGroupId: '{{resolve:ssm:/demo/sg/lambda-security-group}}' 
 
   ##This is only needed where the Secret Lives (US-EAST-1)
   RotLambdaSecrMgrIngress:

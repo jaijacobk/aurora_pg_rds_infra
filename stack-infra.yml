@@ -102,13 +102,13 @@ Resources:
         - Region: us-west-2
 
 
-  RdsGlobalClusterSeqNumber:
+  RdsGlobalCluster:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /demo/rds/global/cluster/seqnumber
+      Name: /demo/rds/global/cluster/name
       Type: String
-      Value: 1
-      Description: The RDS Global Cluster Seq Number
+      Value: demo-global-cluster-1
+      Description: The RDS Global Cluster Name
 
   RdsKmsKeyArn:
     Type: AWS::SSM::Parameter
@@ -166,8 +166,8 @@ Resources:
   LambdaSecurityGroupID:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /demo/sg/lambda-security-group-https
+      Name: /demo/rds/sg/lambda-security-group
       Type: String
-      Value: !Ref LambdaSecurityGroupHttps
+      Value: !Ref LambdaSecurityGroup
       Description: A common Security group for all Lambda functions
 

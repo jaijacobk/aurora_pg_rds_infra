@@ -132,38 +132,3 @@ Resources:
       Type: String
       Value:  !GetAtt LambdaExecutionRole.Arn
       Description: Lambda Execution Role for RDS Failover
-
-  LambdaSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W5
-            reason: "need open to world for various reasons"
-          - id: W28
-            reason: "Explicit name is required allow manual monitoring of event firing"
-          - id: W36
-            reason: "Group Rule Descriptions are defined in GroupDescription"
-          - id: W42
-            reason: "not a valid warning according to Oleg"
-    Properties:
-      GroupDescription: Common Security group for all the Lambda Functions
-      GroupName: !Sub ${orgUnit}-security-group-${envType}-${appCode}-lambda-https
-      VpcId: !ImportValue inf-vpc
-      SecurityGroupIngress:
-        - IpProtocol: "-1"
-          CidrIp: 127.0.0.1/32
-      SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
-
-
-  LambdaSecurityGroupID:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: /demo/rds/sg/lambda-security-group
-      Type: String
-      Value: !Ref LambdaSecurityGroup
-      Description: A common Security group for all Lambda functions

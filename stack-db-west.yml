@@ -17,7 +17,7 @@ Parameters:
   ## Ingres IPs
   IngresSample:
     Type: String
-    Default: 149.79.50.0/24
+    Default: 100.10.50.0/24
 
   ## Db related. Defining here
   DBName: 
@@ -54,12 +54,9 @@ Parameters:
   DBClusterPort:
     Type: String
     Default: 5432
-  RdsGlobalClusterName:
-    Type: String
-    Default: demo-global-cluster-1
   DBClusterIdentifier:
     Type: String
-    Default: the-secondary-cluster
+    Default: the-west-cluster
   PreferredMaintenanceWindow:
     Description: '2AM EST'
     Type: String
@@ -122,7 +119,7 @@ Resources:
           '',
           [
             '{{resolve:secretsmanager:',
-            '/demo/secret/rds/pgadmin',
+            '/demo/secret/rds/theadmin',
             ':SecretString:password}}',
           ],
         ]
@@ -138,7 +135,7 @@ Resources:
   GlobalDBCluster:
     Type: AWS::RDS::GlobalCluster
     Properties:
-      GlobalClusterIdentifier: !Sub ${RdsGlobalClusterName}
+      GlobalClusterIdentifier: '{{resolve:ssm:/demo/rds/global/cluster/name}}'
       SourceDBClusterIdentifier: !Ref RdsCluster
 
   RdsInstance1:
@@ -213,7 +210,7 @@ Resources:
       IpProtocol: tcp
       FromPort: !Ref DBClusterPort
       ToPort: !Ref DBClusterPort
-      SourceSecurityGroupId: '{{resolve:ssm:/demo/sg/lambda-security-group-https}}' 
+      SourceSecurityGroupId: '{{resolve:ssm:/demo/rds/sg/lambda-security-group}}' 
 
 
   #### Parameter Store Export Starts Here ######
