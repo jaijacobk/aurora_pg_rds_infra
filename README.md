@@ -108,4 +108,4 @@ aws cloudformation update-stack --stack-name aurora-pg-rds-db --template-body fi
  ```{r chunk-name-with-no-spaces} 
 aws cloudformation create-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-east.yml --profile yourprofile --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
  ```  
-5. Repeat Step 6
+5. Repeat the Step 6
