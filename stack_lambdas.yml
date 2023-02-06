@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  Failover stack with lambdas for failover, fallback etc
+
+Parameters:
+  orgUnit:
+    Type: String
+    Default: demo
+  envType:
+    Type: String
+    Default: dev
+  appCode:
+    Type: String
+    Default: rds-infra
+  RdsGlobalClusterName:
+    Type: String
+    Default: demo-global-cluster-1
+  RdsGlobalClusterSeqNumber:
+    Type: String
+  TargetDbClusterARN:
+    Type: String
+  WriteEndpoint:
+    Type: String
+  ReadEndpoint:
+    Type: String
+  RdsWriterHost:
+    Type: String
+  RdsReaderHost:
+    Type: String
+  DatamartHost:
+    Type: String
+  RdsReaderHostZoneID:
+    Type: String
+  RdsWriterHostZoneID:
+    Type: String
+  DataMartZoneID:
+    Type: String
+
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    Timeout: 20
+Conditions:
+  IsEast: !Equals [!Ref 'AWS::Region', 'us-east-1']
+  IsWest: !Equals [!Ref 'AWS::Region', 'us-west-2']
+
+Resources:
+  promoteEast:
+    Type: AWS::Serverless::Function
+    Condition: IsEast
+    Properties:
+      FunctionName: !Sub ${orgUnit}-lambda-${envType}-${appCode}-promote-east
+      Description: Planned Failover (Make East the Primary)
+      Handler: index.handler
+      Code:
+          ZipFile: |
+            exports.handler = function(event, context, callback) {
+            console.log(event);
+                const response = {
+                    statusCode: 200,
+                    body: JSON.stringify('promoteEast')
+                };
+                callback(null, response);
+            };
+      Role: '{{resolve:ssm:/demo/rds/iam/lamdaexecutionrole}}'
+      Environment:
+        Variables:
+          GlobalClusterIdentifier: !Ref RdsGlobalClusterName
+          TargetDbClusterIdentifier:  !If [ IsEast, !Sub 'arn:${AWS::Partition}:rds:us-east-1:${AWS::AccountId}:cluster:us-east-1-cluster' , !Sub 'arn:${AWS::Partition}:rds:us-west-2:${AWS::AccountId}:cluster:us-west-2-cluster'  ]
+          Region: !Ref AWS::Region
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:/demo/rds/sg/lambda-security-group}}' 
+        SubnetIds: !Split
+          - ','
+          - !ImportValue inf-PrivateSubnets
+
+  promoteWest:
+    Type: AWS::Serverless::Function
+    Condition: IsWest
+    Properties:
+      FunctionName: !Sub ${orgUnit}-lambda-${envType}-${appCode}-promote-west
+      Description: Planned Failover (Make West the Primary)
+      Handler: appHandler.plannedFailover
+      Role: '{{resolve:ssm:/demo/rds/iam/lamdaexecutionrole}}'
+      Environment:
+        Variables:
+          GlobalClusterIdentifier: !Sub ${RdsGlobalClusterName}-${RdsGlobalClusterSeqNumber}
+          TargetDbClusterIdentifier: !If [ IsEast, !Sub 'arn:${AWS::Partition}:rds:us-east-1:${AWS::AccountId}:cluster:us-east-1-cluster' , !Sub 'arn:${AWS::Partition}:rds:us-west-2:${AWS::AccountId}:cluster:us-west-2-cluster'  ]
+          Region: !Ref AWS::Region
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:/demo/rds/sg/lambda-security-group}}' 
+        SubnetIds: !Split
+          - ','
+          - !ImportValue inf-PrivateSubnets
+
+  detatchAndPromoteWest:
+    Type: AWS::Serverless::Function
+    Condition: IsWest
+    Properties:
+      FunctionName: !Sub ${orgUnit}-lambda-${envType}-${appCode}-detatch-promote-west
+      Description: Detach West and make it standalone
+      Handler: appHandler.detatchAndPromoteWest
+      Role: '{{resolve:ssm:/demo/rds/iam/lamdaexecutionrole}}'
+      Environment:
+        Variables:
+          GlobalClusterIdentifier: !Sub ${RdsGlobalClusterName}-${RdsGlobalClusterSeqNumber}
+          DbClusterIdentifier: !If [ IsEast, !Sub 'arn:${AWS::Partition}:rds:us-east-1:${AWS::AccountId}:cluster:us-east-1-cluster' , !Sub 'arn:${AWS::Partition}:rds:us-west-2:${AWS::AccountId}:cluster:us-west-2-cluster'  ]
+          Region: !Ref AWS::Region
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:/demo/rds/sg/lambda-security-group}}' 
+        SubnetIds: !Split
+          - ','
+          - !ImportValue inf-PrivateSubnets
