@@ -54,7 +54,7 @@ aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-b
 ![Screenshot](images/image_2.png)  
 
 
-### Step 5: (Planned Failover/Fallback and Unplanned Failover Lambdas)
+### Step 5: (The Lambdas for a Planned Failover/Fallback and Unplanned Failover)
 ```{r chunk-name-with-no-spaces} 
 aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-body file://stack-lambdas.yml --profile yourprofile --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
 aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-body file://stack-lambdas.yml --profile yourprofile --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND  
