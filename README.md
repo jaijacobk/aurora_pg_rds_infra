@@ -75,19 +75,18 @@ Now the database is all ready and your applications can start read/write to the 
 I will leave upto your imagination to mark the primary region database instance as unhealthy. Here is something came up with  
 1. Have an even rule trigger a lamdba, which connects to the writer and do and update opration  
 2. If you get 5 consecutive errors, you can assume that the db instance is irresponsive and it is time to failover to the West  
-
-Once you mark the primary as unhealthy, you can start the failover process by invoking the lambda "demo-lambda-dev-rds-infra-detach-and-promote-west" as below  
+3. Once you mark the primary as unhealthy, you can start the failover process by invoking the lambda "demo-lambda-dev-rds-infra-detach-and-promote-west" from your event rule Lambda
 
     aws lambda invoke --function-name arn:aws:lambda:us-west-2:{accountid}:function:demo-lambda-dev-rds-infra-detach-and-promote-west --profile saml --region us-west-2 --log-type Tail ~/lambda.log  
-    
-The end result will be the following (a standalone database in the WEST with a READ and WRITE end point)  
+
+The end result will be the following (a standalone database in the WEST with a READ and WRITE end point). You should use a Route53 records and update the CNAME with the new end point so that failover will be transparent to your applications
 
 ![Screenshot](images/image_5.png)  
 
 
 ### Step6 (Fallback to East)
 1. Delete the East Stack (do it from the cloudformation)
-2. Change the name of the global cluster from the parameter store (/demo/rds/global/cluster/name)
+2. Change the name of the global cluster from the parameter store (/demo/rds/global/cluster/name). For example, change 'demo-global-cluster-1' to 'demo-global-cluster-2'
 3. Update the West Cloudformation stack
 
 aws cloudformation update-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-west.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND 
