@@ -15,7 +15,7 @@ aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body
 
 #### This will create the following
 1. A custom KMS Key for the Database encryption and Secret manager encryption. The ARN of the the KMS Key will be exported to a parameter store entry called /demo/rds/kmskey/arn
-2. Secret Manager entries called 'theadmin' and  'theuser'. These secretes will be exported the parameter store (demo/rds/theadmin/secret and demo/rds/theuser/secret respectively)
+2. Secret Manager entries called 'theadmin' and  'theuser'. These secrets will be exported the parameter store (demo/rds/theadmin/secret and demo/rds/theuser/secret respectively)
 3. A security group called 'LambdaSecurityGroup' for the Lambdas to manage 443 traffic. The value of the securify group will be exported a parameter store entry called /demo/rds/sg/lambda-security-group
 4. A parameter store entry called '/demo/rds/global/cluster/name' to store the Gloabl Cluster Name. We will be changing this value when we do a fallback after an unplanned failover.
 
