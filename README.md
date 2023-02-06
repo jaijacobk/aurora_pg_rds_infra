@@ -41,13 +41,12 @@ An unplanned event occurs when the primary region becomes unhealthy. Unfortunate
 ### Step4 (Build the stack-db-east in us-east-1)
 1.  aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-body file://stack-db-east.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
 
+#### This will create the following
+1. A new cluster which will be added to the Global Cluster created in the West (above step)
+2. Two READER instances of the databae in the east  
 
 ![Screenshot](images/image_2.png)  
 
-
-#### This will create the following
-1. A new cluster which will be added to the Global Cluster created in the West (above step)
-2. Two READER instances of the databae in the east
 
 ### Step5 (Fail to East and make the East Primary)
 1. Fail the global cluster to East to flip the writer from West to East (you can do it from the console or via a Lambda)
