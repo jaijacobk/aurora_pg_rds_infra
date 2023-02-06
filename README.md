@@ -101,9 +101,12 @@ Once the East region recovers from the distaster, it is time to fallback and mak
 1. Delete the East Stack (do it from the cloudformation)
 2. Change the name of the global cluster from the parameter store (/demo/rds/global/cluster/name). For example, change 'demo-global-cluster-1' to 'demo-global-cluster-2'
 3. Update the West Cloudformation stack
+ ```{r chunk-name-with-no-spaces} 
 aws cloudformation update-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-west.yml --profile yourprofile --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND 
+ ```
+ 4. Recreate the East CloudFormation stack  
+--capabilities CAPABILITY_AUTO_EXPAND 
  ```{r chunk-name-with-no-spaces} 
 aws cloudformation create-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-east.yml --profile yourprofile --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
  ```  
-4. Recreate the East CloudFormation stack
 5. Repeat Step 6
