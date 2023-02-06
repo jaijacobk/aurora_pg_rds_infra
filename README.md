@@ -80,9 +80,9 @@ Now the database is all ready and your applications can start to read/write via 
 
 ### Step 7: (Unplanned Failover )
 
-I will leave upto your imagination to mark the primary region database instance as unhealthy. Here is something came up with  
-1. Have an even rule trigger a lamdba, which connects to the writer and do and update operation  
-2. If you get 5 consecutive errors, you can assume that the db instance is unresponsive and it is time to failover to the West  
+I will leave it up to your imagination how to mark the primary region database instance as unhealthy. Here is something I came up with  
+1. Have an "event rule" triggers a lamdba, which connects to the writer to do an update operation  
+2. If you get 3 consecutive errors, you can assume that the db instance is unresponsive and it is time to failover to the West  
 3. Once you mark the primary as unhealthy, you can start the failover process by invoking the lambda "demo-lambda-dev-rds-infra-detach-and-promote-west" from your event rule Lambda
  ```{r chunk-name-with-no-spaces} 
     aws lambda invoke --function-name arn:aws:lambda:us-west-2:{accountid}:function:demo-lambda-dev-rds-infra-detach-and-promote-west --profile saml --region us-west-2 --log-type Tail ~/lambda.log
