@@ -59,13 +59,13 @@ aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-bo
  ```
 
 #### This will create the following
-1. A lambda called 'demo-lambda-dev-rds-infra-planned-failover-2-east' to manully promote the East as the primary (Deployed to EAST only)
-2. A lambda called 'demo-lambda-dev-rds-infra-planned-failover-2-west' to manully promote the West as the primary (Deployed to WEST only)
+1. A lambda called 'demo-lambda-dev-rds-infra-planned-failover-2-east' to manually promote the East as the primary (Deployed to EAST only)
+2. A lambda called 'demo-lambda-dev-rds-infra-planned-failover-2-west' to manually promote the West as the primary (Deployed to WEST only)
 3. A lambda called 'demo-lambda-dev-rds-infra-detach-and-promote-west' to handle an Unplanned Failover event (Deployed to WEST only)
 
 
 ### Step 6: (Do a Planned Failover to the East and make the East Primary)
-1. Fail the global cluster to East to flip the writer from West to East by invoking the lamdas as follows
+1. Fail the global cluster to East to flip the writer from West to East by invoking the lambda as follows
 ```{r chunk-name-with-no-spaces} 
 aws lambda invoke --function-name arn:aws:lambda:us-east-1:{accountid}:function:demo-lambda-dev-rds-infra-planned-failover-2-east --region us-east-1  --log-type Tail ~/lambda.log 
  ```    
@@ -73,7 +73,7 @@ aws lambda invoke --function-name arn:aws:lambda:us-east-1:{accountid}:function:
 
 ![Screenshot](images/image_3.png)  
 
-Now the database is all ready and your applications can start read/write to the database using the appropriate end points as shown below
+Now the database is all ready and your applications can start to read/write via the appropriate end points as shown below
 
 ![Screenshot](images/image_4.png)  
 
