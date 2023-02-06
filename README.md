@@ -8,8 +8,12 @@ An unplanned event occurs when the primary region becomes unhealthy. Unfortunate
   
 ### Step:1 (Build the stack-infra in both regions)
 
-1.  aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND
-2.  aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND
+```{r chunk-name-with-no-spaces} 
+    aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND
+ ```
+```{r chunk-name-with-no-spaces} 
+    aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND
+ ```
 
 
 #### This will create the following
@@ -79,9 +83,7 @@ I will leave upto your imagination to mark the primary region database instance 
 
  ```{r chunk-name-with-no-spaces} 
     aws lambda invoke --function-name arn:aws:lambda:us-west-2:{accountid}:function:demo-lambda-dev-rds-infra-detach-and-promote-west --profile saml --region us-west-2 --log-type Tail ~/lambda.log
- ```
-
-  
+ ```  
 
 The end result will be the following (a standalone database in the WEST with a READ and WRITE end point). You should use a Route53 records and update the CNAME with the new end point so that failover will be transparent to your applications
 
