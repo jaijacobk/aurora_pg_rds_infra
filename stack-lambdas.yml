@@ -1,0 +1,144 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  Failover stack with lambdas for failover, fallback etc
+
+Parameters:
+  orgUnit:
+    Type: String
+    Default: demo
+  envType:
+    Type: String
+    Default: dev
+  appCode:
+    Type: String
+    Default: rds-infra
+
+Conditions:
+  IsEast: !Equals [!Ref 'AWS::Region', 'us-east-1']
+  IsWest: !Equals [!Ref 'AWS::Region', 'us-west-2']
+
+Resources:
+  PromoteEastCluster:
+    Type: AWS::Lambda::Function
+    Condition: IsEast
+    Properties:
+      FunctionName: !Sub ${orgUnit}-lambda-${envType}-${appCode}-planned-failover-2-east
+      Description: Planned Failover (Make East the Primary)
+      Handler: index.handler
+      MemorySize: 256
+      Runtime: nodejs14.x
+      Timeout: 60
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const RDS = require('aws-sdk/clients/rds');
+          exports.handler = async event => {
+              var params = {
+                GlobalClusterIdentifier: process.env.GlobalClusterIdentifier, 
+                TargetDbClusterIdentifier:process.env.TargetDbClusterIdentifier,
+              };
+            try {
+              const rds = new RDS();
+              const response = await rds.failoverGlobalCluster(params).promise();
+              console.log(JSON.stringify(response));
+            } catch (err) {
+              return { statusCode: 500, body: 'failed ' + JSON.stringify(err) };
+            }
+            return { statusCode: 200, body: 'success.' };
+            };      
+      Role: '{{resolve:ssm:/demo/rds/iam/lamdaexecutionrole}}'
+      Environment:
+        Variables:
+          GlobalClusterIdentifier: '{{resolve:ssm:/demo/rds/global/cluster/name}}'
+          TargetDbClusterIdentifier:  !If [ IsEast, !Sub 'arn:${AWS::Partition}:rds:us-east-1:${AWS::AccountId}:cluster:the-east-cluster' , !Sub 'arn:${AWS::Partition}:rds:us-west-2:${AWS::AccountId}:cluster:the-west-cluster'  ]
+          Region: !Ref AWS::Region
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:/demo/rds/sg/lambda-security-group}}' 
+        SubnetIds: !Split
+          - ','
+          - !ImportValue inf-PrivateSubnets
+
+
+  PromoteWestCluster:
+    Type: AWS::Lambda::Function
+    Condition: IsWest
+    Properties:
+      FunctionName: !Sub ${orgUnit}-lambda-${envType}-${appCode}-planned-failover-2-west
+      Description: Planned Failover (Make West the Primary)
+      Handler: index.handler
+      MemorySize: 256
+      Runtime: nodejs14.x
+      Timeout: 60
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const RDS = require('aws-sdk/clients/rds');
+          exports.handler = async event => {
+              var params = {
+                GlobalClusterIdentifier: process.env.GlobalClusterIdentifier, 
+                TargetDbClusterIdentifier:process.env.TargetDbClusterIdentifier,
+              };
+            try {
+              const rds = new RDS();
+              const response = await rds.failoverGlobalCluster(params).promise();
+              console.log(JSON.stringify(response));
+            } catch (err) {
+              return { statusCode: 500, body: 'failed ' + JSON.stringify(err) };
+            }
+            return { statusCode: 200, body: 'success.' };
+            };      
+      Role: '{{resolve:ssm:/demo/rds/iam/lamdaexecutionrole}}'
+      Environment:
+        Variables:
+          GlobalClusterIdentifier: '{{resolve:ssm:/demo/rds/global/cluster/name}}'
+          TargetDbClusterIdentifier:  !If [ IsEast, !Sub 'arn:${AWS::Partition}:rds:us-east-1:${AWS::AccountId}:cluster:the-east-cluster' , !Sub 'arn:${AWS::Partition}:rds:us-west-2:${AWS::AccountId}:cluster:the-west-cluster'  ]
+          Region: !Ref AWS::Region
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:/demo/rds/sg/lambda-security-group}}' 
+        SubnetIds: !Split
+          - ','
+          - !ImportValue inf-PrivateSubnets
+
+  DetachAndPromoteWest:
+    Type: AWS::Lambda::Function
+    Condition: IsWest
+    Properties:
+      FunctionName: !Sub ${orgUnit}-lambda-${envType}-${appCode}-detach-and-promote-west
+      Description: Unplanned Failover (Detach the West and Make a standalone Database)
+      Handler: index.handler
+      MemorySize: 256
+      Runtime: nodejs14.x
+      Timeout: 60
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const RDS = require('aws-sdk/clients/rds');
+          exports.handler = async event => {
+              var params = {
+                GlobalClusterIdentifier: process.env.GlobalClusterIdentifier, 
+                DbClusterIdentifier:process.env.DbClusterIdentifier,
+              };
+            try {
+              const rds = new RDS();
+              const response = await rds.removeFromGlobalCluster(params).promise();
+              console.log(JSON.stringify(response));
+            } catch (err) {
+              return { statusCode: 500, body: 'failed ' + JSON.stringify(err) };
+            }
+            return { statusCode: 200, body: 'success.' };
+            };      
+      Role: '{{resolve:ssm:/demo/rds/iam/lamdaexecutionrole}}'
+      Environment:
+        Variables:
+          GlobalClusterIdentifier: '{{resolve:ssm:/demo/rds/global/cluster/name}}'
+          DbClusterIdentifier:  !If [ IsEast, !Sub 'arn:${AWS::Partition}:rds:us-east-1:${AWS::AccountId}:cluster:the-east-cluster' , !Sub 'arn:${AWS::Partition}:rds:us-west-2:${AWS::AccountId}:cluster:the-west-cluster'  ]
+          Region: !Ref AWS::Region
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:/demo/rds/sg/lambda-security-group}}' 
+        SubnetIds: !Split
+          - ','
+          - !ImportValue inf-PrivateSubnets

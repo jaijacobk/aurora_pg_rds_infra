@@ -6,7 +6,7 @@ An unplanned event occurs when the primary region becomes unhealthy. Unfortunate
 
 ![Screenshot](images/image_1.png)
   
-### Step1 (Build the stack-infra in both regions)
+### Step:1 (Build the stack-infra in both regions)
 
 1.  aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND
 2.  aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND
@@ -19,7 +19,7 @@ An unplanned event occurs when the primary region becomes unhealthy. Unfortunate
 4. A parameter store entry called '/demo/rds/global/cluster/name' to store the Gloabl Cluster Name. We will be changing this value when we do a fallback after an unplanned failover.
 
 
-### Step2 (Build the stack-iam in both regions)
+### Step:2 (Build the stack-iam in both regions)
 
 1.  aws cloudformation create-stack --stack-name aurora-pg-rds-iam --template-body file://stack-iam.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM
 2.  aws cloudformation create-stack --stack-name aurora-pg-rds-iam --template-body file://stack-iam.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM
@@ -29,7 +29,7 @@ An unplanned event occurs when the primary region becomes unhealthy. Unfortunate
 1. An IAM role for all your Lambdas to connect to the database
 2. The ARN of the IAM role will be exported a parameter store entry called /demo/rds/iam/lamdaexecutionrole
 
-### Step3 (Build the stack-db-west in us-west-2)
+### Step:3 (Build the stack-db-west in us-west-2)
 
 1.  aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-body file://stack-db-west.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND 
 
@@ -38,7 +38,7 @@ An unplanned event occurs when the primary region becomes unhealthy. Unfortunate
 2. Two instances of the database in the WEST where one of the instances will be a WRITER
 
 
-### Step4 (Build the stack-db-east in us-east-1)
+### Step:4 (Build the stack-db-east in us-east-1)
 1.  aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-body file://stack-db-east.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
 
 #### This will create the following
@@ -48,9 +48,27 @@ An unplanned event occurs when the primary region becomes unhealthy. Unfortunate
 ![Screenshot](images/image_2.png)  
 
 
-### Step5 (Fail to East and make the East Primary)
-1. Fail the global cluster to East to flip the writer from West to East (you can do it from the console or via a Lambda)
+### Step:5 (Planned Failover/Fallback and Unplanned Failover Lambdas)
+1. aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-body file://stack-lambdas.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
+2. aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-body file://stack-lambdas.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND 
+
+#### This will create the following
+1. A lambda called 'demo-lambda-dev-rds-infra-planned-failover-2-east' to manully promote the East as the primary (Deployed to EAST only)
+2. A lambda called 'demo-lambda-dev-rds-infra-planned-failover-2-west' to manully promote the West as the primary (Deployed to WEST only)
+3. A lambda called 'demo-lambda-dev-rds-infra-detach-and-promote-west' to handle an Unplanned Failover event (Deployed to WEST only)
+
+
+### Step:6 (Do a Planned Failover to the East and make the East Primary)
+1. Fail the global cluster to East to flip the writer from West to East by invoking the lamdas as follows
+    aws lambda invoke --function-name arn:aws:lambda:us-east-1:{accountid}:function:demo-lambda-dev-rds-infra-planned-failover-2-east --region us-east-1  --log-type Tail ~/lambda.log
 2. Once the failover is complete, your application can use the East end point to connect to the database
+
+![Screenshot](images/image_3.png)  
+
+Now the database is all ready and your applications start writing the Writer in the East using the Wrtier end point as shown below
+
+![Screenshot](images/image_4.png)  
+
 
 ### Step5 (Detach and Promote West in the event of an East failure)
 1. Use the detach and promote to make the West the primary (you can do it from the console or via a Lambda)
