@@ -82,7 +82,7 @@ Now the database is all ready and your applications can start to read/write via 
 
 ### Step 7: (Unplanned Failover )
 
-I will leave it up to your imagination how to mark the primary region database instance as unhealthy. Here is something I came up with  
+I will leave it up to your imagination how to mark the primary region database instance as unhealthy. The following is just to give you an idea.
 1. Have an "event rule" trigger a lamdba, which connects to the writer to do an update operation  
 2. If you get 3 consecutive errors, you can assume that the db instance is unresponsive and it is time to failover to the West  
 3. Once you mark the primary as unhealthy, you can start the failover process by invoking the lambda "demo-lambda-dev-rds-infra-detach-and-promote-west" from your event rule lambda
