@@ -17,8 +17,7 @@ Parameters:
   ## Ingres IPs
   IngresSample:
     Type: String
-    Default: 149.79.50.0/24
-
+    Default: 100.23.50.0/24
   ## Db related. Defining here
   DBEngineVersion:
     Type: String
