@@ -106,4 +106,4 @@ aws cloudformation update-stack --stack-name aurora-pg-rds-db --template-body fi
 aws cloudformation create-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-east.yml --profile yourprofile --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
  ```  
 4. Recreate the East CloudFormation stack
-5. Repeat Step 6:
+5. Repeat Step 6
