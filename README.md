@@ -105,7 +105,6 @@ Once the East region recovers from the distaster, it is time to fallback and mak
 aws cloudformation update-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-west.yml --profile yourprofile --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND 
  ```
  4. Recreate the East CloudFormation stack  
---capabilities CAPABILITY_AUTO_EXPAND 
  ```{r chunk-name-with-no-spaces} 
 aws cloudformation create-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-east.yml --profile yourprofile --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
  ```  
