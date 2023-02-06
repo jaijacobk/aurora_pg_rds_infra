@@ -41,7 +41,9 @@ aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-b
 
 
 ### Step:4 (Build the stack-db-east in us-east-1)
-1.  aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-body file://stack-db-east.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
+```{r chunk-name-with-no-spaces} 
+aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-body file://stack-db-east.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
+ ```
 
 #### This will create the following
 1. A new cluster which will be added to the Global Cluster created in the West (above step)
@@ -51,8 +53,10 @@ aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-b
 
 
 ### Step:5 (Planned Failover/Fallback and Unplanned Failover Lambdas)
-1. aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-body file://stack-lambdas.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
-2. aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-body file://stack-lambdas.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND 
+```{r chunk-name-with-no-spaces} 
+aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-body file://stack-lambdas.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
+aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-body file://stack-lambdas.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND  
+ ```
 
 #### This will create the following
 1. A lambda called 'demo-lambda-dev-rds-infra-planned-failover-2-east' to manully promote the East as the primary (Deployed to EAST only)
@@ -62,7 +66,9 @@ aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-b
 
 ### Step:6 (Do a Planned Failover to the East and make the East Primary)
 1. Fail the global cluster to East to flip the writer from West to East by invoking the lamdas as follows
-    aws lambda invoke --function-name arn:aws:lambda:us-east-1:{accountid}:function:demo-lambda-dev-rds-infra-planned-failover-2-east --region us-east-1  --log-type Tail ~/lambda.log
+```{r chunk-name-with-no-spaces} 
+aws lambda invoke --function-name arn:aws:lambda:us-east-1:{accountid}:function:demo-lambda-dev-rds-infra-planned-failover-2-east --region us-east-1  --log-type Tail ~/lambda.log 
+ ```    
 2. Once the failover is complete, your application can use the East end point to connect to the database
 
 ![Screenshot](images/image_3.png)  
@@ -78,11 +84,9 @@ I will leave upto your imagination to mark the primary region database instance 
 1. Have an even rule trigger a lamdba, which connects to the writer and do and update opration  
 2. If you get 5 consecutive errors, you can assume that the db instance is irresponsive and it is time to failover to the West  
 3. Once you mark the primary as unhealthy, you can start the failover process by invoking the lambda "demo-lambda-dev-rds-infra-detach-and-promote-west" from your event rule Lambda
-
  ```{r chunk-name-with-no-spaces} 
     aws lambda invoke --function-name arn:aws:lambda:us-west-2:{accountid}:function:demo-lambda-dev-rds-infra-detach-and-promote-west --profile saml --region us-west-2 --log-type Tail ~/lambda.log
  ```  
-
 The end result will be the following (a standalone database in the WEST with a READ and WRITE end point). You should use a Route53 records and update the CNAME with the new end point so that failover will be transparent to your applications
 
 ![Screenshot](images/image_5.png)  
@@ -92,11 +96,9 @@ The end result will be the following (a standalone database in the WEST with a R
 1. Delete the East Stack (do it from the cloudformation)
 2. Change the name of the global cluster from the parameter store (/demo/rds/global/cluster/name). For example, change 'demo-global-cluster-1' to 'demo-global-cluster-2'
 3. Update the West Cloudformation stack
-
 aws cloudformation update-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-west.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND 
-
-4. Recreate the East CloudFormation stack
-
+ ```{r chunk-name-with-no-spaces} 
 aws cloudformation create-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-east.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
-
+ ```  
+4. Recreate the East CloudFormation stack
 5. Repeat Step:6
