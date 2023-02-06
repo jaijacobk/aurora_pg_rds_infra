@@ -4,7 +4,7 @@ Aurora Global Database supports managed planned failovers, you can manually invo
 
 An unplanned event occurs when the primary region becomes unhealthy. Unfortunately, there is no AWS-orchestrated automated solution available to promote the secondary region and bring the database up and running. This project illustrates how to acheive this by building the RDS cluster in a certain way along with a series of Lambdas and a step function
 
-![Screenshot](images/image_1.png)  
+![Screenshot](images/image_1.png)
   
 ### Step1 (Build the stack-infra in both regions)
 
