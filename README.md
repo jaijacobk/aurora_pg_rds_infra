@@ -13,8 +13,8 @@ An unplanned event occurs when the primary region becomes unhealthy. There is no
 
 #### This will create the following
 1. A custom KMS Key for the database encryption and for the secret manager encryption
-2. Two secret manager entries. One for the root user 'pgadmin' and another user called 'lambdauser' for the applications
-3. A security group called 'LambdaSecurityGroupHttps' for the Lambdas to manage 443 traffic
+2. Two secret manager entries. One for the root user 'pgadmin' and another user called 'theuser' for the applications
+3. A security group called 'LambdaSecurityGroup' for the Lambdas to manage 443 traffic
 
 ### Step2 (Build the stack-iam in both regions)
 

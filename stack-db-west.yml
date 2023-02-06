@@ -59,7 +59,7 @@ Parameters:
     Default: demo-global-cluster-1
   DBClusterIdentifier:
     Type: String
-    Default: us-west-2-cluster
+    Default: the-secondary-cluster
   PreferredMaintenanceWindow:
     Description: '2AM EST'
     Type: String
@@ -156,19 +156,19 @@ Resources:
       AutoMinorVersionUpgrade: true
       PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
 
-  RdsInstance2:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      AvailabilityZone: !Sub '${AWS::Region}b'
-      DBClusterIdentifier: !Ref RdsCluster
-      DBInstanceClass: !Ref DBInstanceClass
-      EnablePerformanceInsights: true
-      Engine: aurora-postgresql
-      EngineVersion: !Ref DBEngineVersion
-      DBParameterGroupName: !Ref RdsInstanceParameterGroup
-      PubliclyAccessible: false
-      AutoMinorVersionUpgrade: true
-      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
+  # RdsInstance2:
+  #   Type: AWS::RDS::DBInstance
+  #   Properties:
+  #     AvailabilityZone: !Sub '${AWS::Region}b'
+  #     DBClusterIdentifier: !Ref RdsCluster
+  #     DBInstanceClass: !Ref DBInstanceClass
+  #     EnablePerformanceInsights: true
+  #     Engine: aurora-postgresql
+  #     EngineVersion: !Ref DBEngineVersion
+  #     DBParameterGroupName: !Ref RdsInstanceParameterGroup
+  #     PubliclyAccessible: false
+  #     AutoMinorVersionUpgrade: true
+  #     PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
 
   RdsClusterSecurityGroup:
     Type: AWS::EC2::SecurityGroup

@@ -71,30 +71,30 @@ Resources:
       AliasName: !Sub alias/${orgUnit}-${appCode}-kms-key
       TargetKeyId: !Ref RdsKmsKey
 
-  RootUserSecret:
+  TheAdminUserSecret:
     Type: AWS::SecretsManager::Secret
     Condition: IsEast
     Properties:
-      Name: /demo/secret/rds/pgadmin
-      Description: Aurora PostgreSQL Master User (pgadmin) Secret
+      Name: /demo/secret/rds/theadmin
+      Description: Aurora PostgreSQL Master User (theadmin) Secret
       KmsKeyId: !Ref RdsKmsKey
       GenerateSecretString:
-        SecretStringTemplate: !Sub '{"username": "pgadmin"}'
+        SecretStringTemplate: !Sub '{"username": "theadmin"}'
         GenerateStringKey: "password"
         ExcludeCharacters: '"@/\'
         PasswordLength: 16
       ReplicaRegions:
         - Region: us-west-2
 
-  LambdaUserSecret:
+  TheUserSecret:
     Type: AWS::SecretsManager::Secret
     Condition: IsEast
     Properties:
-      Name: /demo/secret/rds/lambdauser
-      Description: Application user lambdauser Secret
+      Name: /demo/secret/rds/theuser
+      Description: Application user theuser Secret
       KmsKeyId: !Ref RdsKmsKey
       GenerateSecretString:
-        SecretStringTemplate: !Sub '{"username": "lambdauser"}'
+        SecretStringTemplate: !Sub '{"username": "theuser"}'
         GenerateStringKey: "password"
         ExcludeCharacters: '"@/\'
         PasswordLength: 16
@@ -118,25 +118,25 @@ Resources:
       Value: !GetAtt RdsKmsKey.Arn
       Description: The RDS KMS Key for Secret/Db encryption
 
-  RootUserSecretArn:
+  TheAdminUserSecretArn:
     Type: AWS::SSM::Parameter
     Condition: IsEast
     Properties:
-      Name: /demo/rds/pgadmin/secret
+      Name: /demo/rds/theadmin/secret
       Type: String
-      Value: !Ref RootUserSecret
+      Value: !Ref TheAdminUserSecret
       Description: The Master User Secret
 
-  LambdaUserSecretArn:
+  TheUserSecretArn:
     Type: AWS::SSM::Parameter
     Condition: IsEast
     Properties:
-      Name: /demo/rds/lambdauser/secret
+      Name: /demo/rds/theuser/secret
       Type: String
-      Value: !Ref LambdaUserSecret
-      Description: The lambdauser Secret
+      Value: !Ref TheUserSecret
+      Description: The theuser Secret
 
-  LambdaSecurityGroupHttps:
+  LambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Metadata:
       cfn_nag:
@@ -163,7 +163,7 @@ Resources:
           CidrIp: 0.0.0.0/0
 
 
-  LambdaSecurityGroupHttpsID:
+  LambdaSecurityGroupID:
     Type: AWS::SSM::Parameter
     Properties:
       Name: /demo/sg/lambda-security-group-https
