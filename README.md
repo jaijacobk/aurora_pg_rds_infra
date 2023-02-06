@@ -10,8 +10,6 @@ An unplanned event occurs when the primary region becomes unhealthy. Unfortunate
 
 ```{r chunk-name-with-no-spaces} 
     aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND
- ```
-```{r chunk-name-with-no-spaces} 
     aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND
  ```
 
