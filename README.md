@@ -77,7 +77,11 @@ I will leave upto your imagination to mark the primary region database instance 
 2. If you get 5 consecutive errors, you can assume that the db instance is irresponsive and it is time to failover to the West  
 3. Once you mark the primary as unhealthy, you can start the failover process by invoking the lambda "demo-lambda-dev-rds-infra-detach-and-promote-west" from your event rule Lambda
 
-    aws lambda invoke --function-name arn:aws:lambda:us-west-2:{accountid}:function:demo-lambda-dev-rds-infra-detach-and-promote-west --profile saml --region us-west-2 --log-type Tail ~/lambda.log  
+ ```{r chunk-name-with-no-spaces} 
+    aws lambda invoke --function-name arn:aws:lambda:us-west-2:{accountid}:function:demo-lambda-dev-rds-infra-detach-and-promote-west --profile saml --region us-west-2 --log-type Tail ~/lambda.log
+ ```
+
+  
 
 The end result will be the following (a standalone database in the WEST with a READ and WRITE end point). You should use a Route53 records and update the CNAME with the new end point so that failover will be transparent to your applications
 
