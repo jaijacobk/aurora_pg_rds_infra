@@ -65,12 +65,13 @@ An unplanned event occurs when the primary region becomes unhealthy. Unfortunate
 
 ![Screenshot](images/image_3.png)  
 
-Now the database is all ready and your applications start writing the Writer in the East using the Wrtier end point as shown below
+Now the database is all ready and your applications can start read/write to the databaase using the appropriate end points as shown below
 
 ![Screenshot](images/image_4.png)  
 
 
-### Step5 (Detach and Promote West in the event of an East failure)
+### Step:7 (Unplanned Failover )
+
 1. Use the detach and promote to make the West the primary (you can do it from the console or via a Lambda)
 2. Once the detach is complete, your application can use the West end point to connect to the database
 3. This will create a standalone database in the WEST and the replication between the regions will stop at this moment
@@ -86,4 +87,4 @@ aws cloudformation update-stack --stack-name aurora-pg-rds-db --template-body fi
 
 aws cloudformation create-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-east.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
 
-5. Once this is over, fail to East to make the East primary again
+5. Repeat Step:6
