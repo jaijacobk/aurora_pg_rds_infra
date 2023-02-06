@@ -16,8 +16,8 @@ aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body
 #### This will create the following
 1. A custom KMS Key for the Database encryption and Secret manager encryption. The ARN of the the KMS Key will be exported to a parameter store entry called /demo/rds/kmskey/arn
 2. Secret Manager entries called 'theadmin' and  'theuser'. These secrets will be exported the parameter store (demo/rds/theadmin/secret and demo/rds/theuser/secret respectively)
-3. A security group called 'LambdaSecurityGroup' for the Lambdas to manage 443 traffic. The value of the securify group will be exported a parameter store entry called /demo/rds/sg/lambda-security-group
-4. A parameter store entry called '/demo/rds/global/cluster/name' to store the Gloabl Cluster Name. We will be changing this value when we do a fallback after an unplanned failover.
+3. A security group called 'LambdaSecurityGroup' for the Lambdas to manage 443 traffic. The value of the security group will be exported to a parameter store entry called /demo/rds/sg/lambda-security-group
+4. A parameter store entry called '/demo/rds/global/cluster/name' to store the Global Cluster Name. We will be changing this value when we do a fallback after an unplanned failover.
 
 
 ### Step 2: (Build the stack-iam in both regions)
@@ -47,7 +47,7 @@ aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-b
 
 #### This will create the following
 1. A new cluster which will be added to the Global Cluster created in the West (above step)
-2. Two READER instances of the databae in the east  
+2. Two READER instances of the database in the east  
 
 ![Screenshot](images/image_2.png)  
 
@@ -73,7 +73,7 @@ aws lambda invoke --function-name arn:aws:lambda:us-east-1:{accountid}:function:
 
 ![Screenshot](images/image_3.png)  
 
-Now the database is all ready and your applications can start read/write to the databaase using the appropriate end points as shown below
+Now the database is all ready and your applications can start read/write to the database using the appropriate end points as shown below
 
 ![Screenshot](images/image_4.png)  
 
@@ -81,8 +81,8 @@ Now the database is all ready and your applications can start read/write to the 
 ### Step 7: (Unplanned Failover )
 
 I will leave upto your imagination to mark the primary region database instance as unhealthy. Here is something came up with  
-1. Have an even rule trigger a lamdba, which connects to the writer and do and update opration  
-2. If you get 5 consecutive errors, you can assume that the db instance is irresponsive and it is time to failover to the West  
+1. Have an even rule trigger a lamdba, which connects to the writer and do and update operation  
+2. If you get 5 consecutive errors, you can assume that the db instance is unresponsive and it is time to failover to the West  
 3. Once you mark the primary as unhealthy, you can start the failover process by invoking the lambda "demo-lambda-dev-rds-infra-detach-and-promote-west" from your event rule Lambda
  ```{r chunk-name-with-no-spaces} 
     aws lambda invoke --function-name arn:aws:lambda:us-west-2:{accountid}:function:demo-lambda-dev-rds-infra-detach-and-promote-west --profile saml --region us-west-2 --log-type Tail ~/lambda.log
