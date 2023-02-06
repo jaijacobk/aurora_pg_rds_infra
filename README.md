@@ -89,7 +89,7 @@ I will leave it up to your imagination how to mark the primary region database i
  ```{r chunk-name-with-no-spaces} 
     aws lambda invoke --function-name arn:aws:lambda:us-west-2:{accountid}:function:demo-lambda-dev-rds-infra-detach-and-promote-west --profile yourprofile --region us-west-2 --log-type Tail ~/lambda.log
  ```  
-I would suggest using a 'Step Function' if you have more than one lambdas to trigger. For example, if you are using Route53 CNAMEs for your writer/reader endpoints, it is better to detach first, then update the CNAMES. If you have containerized (ECS for example) applications with database connectivity, it is recommended to restart ECS tasks after the Route53 change to avoid any possibility of IP caching. This can be a third lambda for your step function.
+I would suggest using a 'Step Function' if you have more than one lambdas to trigger. For example, if you are using Route53 CNAMEs for your writer/reader endpoints, it is better to detach first, and then update the CNAMES. If you have containerized (ECS for example) applications with database connectivity, it is recommended to restart ECS tasks after the Route53 change to avoid any possibility of IP caching. This can be a third lambda for your step function.
 
 The end result will be the following (a standalone database in the WEST with a READ and WRITE end point).
 
