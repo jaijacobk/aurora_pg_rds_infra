@@ -5,6 +5,11 @@ Aurora Global Database supports managed planned failovers, you can manually invo
 An unplanned event occurs when the primary region becomes unhealthy. There is no AWS-orchestrated automated solution available to promote the secondary region and bring the database up and running. This project illustrates a way of achieving this by building the stacks in a certain way along with a series of Lambdas and with the help of a stepfunction  
 
 
+![Screenshot](images/Step-1.png)  
+
+  
+
+
 ### Step1 (Build the stack-infra in both regions)
 
 1.  aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND
