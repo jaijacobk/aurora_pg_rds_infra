@@ -2,15 +2,17 @@
 
 Aurora Global Database supports managed planned failovers. You can manually invoke a process that promotes one of the existing secondary regions to be the new primary region. A managed planned failover, however, requires a healthy global database cluster.   
 
-An unplanned event occurs when the primary region becomes unhealthy. Unfortunately, there is no AWS-orchestrated automated solution available to promote the secondary region and bring the database up and running. This project illustrates how to achieve this by building the RDS cluster in a certain way along with a series of Lambdas and a step function
+An unplanned event occurs when the primary region becomes unhealthy. Unfortunately, there is no AWS-orchestrated automated solution available to promote the secondary region and bring the database up and running. 
+
+This project illustrates how to achieve this by building the RDS cluster in a certain way along with a series of Lambdas and a step function. 
 
 ![Screenshot](images/image_1.png)
   
 ### Step 1: (Build the stack-infra in both regions)
 
 ```{r chunk-name-with-no-spaces} 
-aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND
-aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND
+aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile yourprofile --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND
+aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body file://stack-infra.yml --profile yourprofile --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND
  ```
 
 #### This will create the following
@@ -22,8 +24,8 @@ aws cloudformation create-stack --stack-name aurora-pg-rds-infra --template-body
 
 ### Step 2: (Build the stack-iam in both regions)
 ```{r chunk-name-with-no-spaces} 
-aws cloudformation create-stack --stack-name aurora-pg-rds-iam --template-body file://stack-iam.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM
-aws cloudformation create-stack --stack-name aurora-pg-rds-iam --template-body file://stack-iam.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM
+aws cloudformation create-stack --stack-name aurora-pg-rds-iam --template-body file://stack-iam.yml --profile yourprofile --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM
+aws cloudformation create-stack --stack-name aurora-pg-rds-iam --template-body file://stack-iam.yml --profile yourprofile --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM
  ```
 
 #### This will create the following
@@ -32,7 +34,7 @@ aws cloudformation create-stack --stack-name aurora-pg-rds-iam --template-body f
 
 ### Step 3: (Build the stack-db-west in us-west-2)
 ```{r chunk-name-with-no-spaces} 
-aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-body file://stack-db-west.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND 
+aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-body file://stack-db-west.yml --profile yourprofile --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND 
  ```
 
 #### This will create the following
@@ -42,7 +44,7 @@ aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-b
 
 ### Step 4: (Build the stack-db-east in us-east-1)
 ```{r chunk-name-with-no-spaces} 
-aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-body file://stack-db-east.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
+aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-body file://stack-db-east.yml --profile yourprofile --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
  ```
 
 #### This will create the following
@@ -54,8 +56,8 @@ aws cloudformation create-stack --stack-name aurora-pg-rds-database --template-b
 
 ### Step 5: (Planned Failover/Fallback and Unplanned Failover Lambdas)
 ```{r chunk-name-with-no-spaces} 
-aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-body file://stack-lambdas.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
-aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-body file://stack-lambdas.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND  
+aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-body file://stack-lambdas.yml --profile yourprofile --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
+aws cloudformation create-stack --stack-name aurora-pg-rds-lambdas --template-body file://stack-lambdas.yml --profile yourprofile --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND  
  ```
 
 #### This will create the following
@@ -85,19 +87,21 @@ I will leave it up to your imagination how to mark the primary region database i
 2. If you get 3 consecutive errors, you can assume that the db instance is unresponsive and it is time to failover to the West  
 3. Once you mark the primary as unhealthy, you can start the failover process by invoking the lambda "demo-lambda-dev-rds-infra-detach-and-promote-west" from your event rule lambda
  ```{r chunk-name-with-no-spaces} 
-    aws lambda invoke --function-name arn:aws:lambda:us-west-2:{accountid}:function:demo-lambda-dev-rds-infra-detach-and-promote-west --profile saml --region us-west-2 --log-type Tail ~/lambda.log
+    aws lambda invoke --function-name arn:aws:lambda:us-west-2:{accountid}:function:demo-lambda-dev-rds-infra-detach-and-promote-west --profile yourprofile --region us-west-2 --log-type Tail ~/lambda.log
  ```  
-The end result will be the following (a standalone database in the WEST with a READ and WRITE end point)  
+Id suggest to use a 'Step Function' if you have more than one lambdas to trigger. For example, if you are using Route53 CNAMEs for your writer/reader end points, it is better to detach first, then update the CNAMES etc.   
+The end result will be the following (a standalone database in the WEST with a READ and WRITE end point).
 
 ![Screenshot](images/image_5.png)  
 
 ### Step 8: (Fallback to East)
+Once the East region recovers from the 
 1. Delete the East Stack (do it from the cloudformation)
 2. Change the name of the global cluster from the parameter store (/demo/rds/global/cluster/name). For example, change 'demo-global-cluster-1' to 'demo-global-cluster-2'
 3. Update the West Cloudformation stack
-aws cloudformation update-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-west.yml --profile saml --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND 
+aws cloudformation update-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-west.yml --profile yourprofile --region us-west-2 --capabilities CAPABILITY_AUTO_EXPAND 
  ```{r chunk-name-with-no-spaces} 
-aws cloudformation create-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-east.yml --profile saml --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
+aws cloudformation create-stack --stack-name aurora-pg-rds-db --template-body file://stack-db-east.yml --profile yourprofile --region us-east-1 --capabilities CAPABILITY_AUTO_EXPAND 
  ```  
 4. Recreate the East CloudFormation stack
-5. Repeat Step:6
+5. Repeat Step 6:
