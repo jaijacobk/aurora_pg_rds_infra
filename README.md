@@ -1,7 +1,8 @@
 # How to Build the Multi Regional Aurora Postgres Global Database With an Automatic Failover and Fallback
 
-Aurora Global Database supports managed planned failovers, you can manually invoke a process that promotes one of the existing secondary regions to be the new primary region. A managed planned failover, however, requires a healthy global database cluster. 
-An unplanned event occurs when the primary region becomes unhealthy. There is no AWS-orchestrated automated solution available to promote the secondary region and bring the database up and running. This project illustrates a way of achieving this by building the stacks in a certain way along with a series of Lambdas and a step function  
+Aurora Global Database supports managed planned failovers, you can manually invoke a process that promotes one of the existing secondary regions to be the new primary region. A managed planned failover, however, requires a healthy global database cluster.   
+
+An unplanned event occurs when the primary region becomes unhealthy. There is no AWS-orchestrated automated solution available to promote the secondary region and bring the database up and running. This project illustrates a way of achieving this by building the stacks in a certain way along with a series of Lambdas and with the help of a stepfunction  
 
 
 ### Step1 (Build the stack-infra in both regions)
