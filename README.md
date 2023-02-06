@@ -96,7 +96,8 @@ The end result will be the following (a standalone database in the WEST with a R
 ![Screenshot](images/image_5.png)  
 
 ### Step 8: (Fallback to East)
-Once the East region recovers from the 
+Once the East region recovers from the distaster, it is time to fallback and make the East the primary agian. Here is what you need to do. 
+
 1. Delete the East Stack (do it from the cloudformation)
 2. Change the name of the global cluster from the parameter store (/demo/rds/global/cluster/name). For example, change 'demo-global-cluster-1' to 'demo-global-cluster-2'
 3. Update the West Cloudformation stack
