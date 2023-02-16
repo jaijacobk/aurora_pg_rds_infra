@@ -6,13 +6,13 @@ Description: >-
   Aurora Postgres Database IAM, KMS and Secrets
 
 Parameters:
-  orgUnit:
+  OU:
     Type: String
     Default: demo
-  envType:
+  PlatForm:
     Type: String
     Default: dev
-  appCode:
+  Project:
     Type: String
     Default: rds-infra
 
@@ -29,7 +29,7 @@ Resources:
           - id: W11
             reason: Some * are unavoidable, all resources are limited by account as a minimum
     Properties:
-      RoleName: !Sub ${orgUnit}-iam-${envType}-${appCode}-${AWS::Region}-lambda-exec-role
+      RoleName: !Sub ${OU}-iam-${PlatForm}-${Project}-${AWS::Region}-lambda-exec-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -42,7 +42,7 @@ Resources:
                 - rds.amazonaws.com
             Action: 'sts:AssumeRole'
       Policies:
-        - PolicyName: !Sub ${orgUnit}-iam-${envType}-${appCode}-lambda-execution-policy
+        - PolicyName: !Sub ${OU}-iam-${PlatForm}-${Project}-lambda-execution-policy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -80,7 +80,7 @@ Resources:
                   - kms:GenerateDataKey*
                   - kms:DescribeKey
                 Resource:
-                  - !Sub arn:aws:kms:*:${AWS::AccountId}:alias/${orgUnit}-kms-*
+                  - !Sub arn:aws:kms:*:${AWS::AccountId}:alias/${OU}-kms-*
               - Effect: Allow
                 Action:
                   - lambda:InvokeFunction

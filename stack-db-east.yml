@@ -5,13 +5,13 @@ Description: >-
   Indgo Aurora Postgres Database East Nested Stack 
 
 Parameters:
-  orgUnit:
+  OU:
     Type: String
     Default: demo
-  envType:
+  PlatForm:
     Type: String
     Default: dev
-  appCode:
+  Project:
     Type: String
     Default: rds-infra
   ## Ingres IPs

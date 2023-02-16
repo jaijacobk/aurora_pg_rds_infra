@@ -6,13 +6,13 @@ Description: >-
   Aurora Postgres Database KMS Key and Secrets
 
 Parameters:
-  orgUnit:
+  OU:
     Type: String
     Default: demo
-  envType:
+  PlatForm:
     Type: String
     Default: dev
-  appCode:
+  Project:
     Type: String
     Default: rds-infra
 
@@ -25,7 +25,7 @@ Resources:
     Type: AWS::KMS::Key
     Properties:
       EnableKeyRotation: true
-      Description: !Sub ${orgUnit}-kms-${envType}-${appCode}
+      Description: !Sub ${OU}-kms-${PlatForm}-${Project}
       KeyPolicy:
         Version: "2012-10-17"
         Statement:          
@@ -36,7 +36,7 @@ Resources:
                 "*"
             # Condition:
             #   StringLike: 
-            #     'aws:PrincipalArn': !Sub arn:aws:iam::${AWS::AccountId}:role/adf-auth-database-${envType}-Pwd-SecretsManager*
+            #     'aws:PrincipalArn': !Sub arn:aws:iam::${AWS::AccountId}:role/adf-auth-database-${PlatForm}-Pwd-SecretsManager*
             Action:
               - kms:CancelKeyDeletion
               - kms:Create*
@@ -68,7 +68,7 @@ Resources:
   RdsKmsKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
-      AliasName: !Sub alias/${orgUnit}-${appCode}-kms-key
+      AliasName: !Sub alias/${OU}-${Project}-kms-key
       TargetKeyId: !Ref RdsKmsKey
 
   TheAdminUserSecret:
@@ -151,7 +151,7 @@ Resources:
             reason: "not a valid warning according to Oleg"
     Properties:
       GroupDescription: Common Security group for all the Lambda Functions
-      GroupName: !Sub ${orgUnit}-security-group-${envType}-${appCode}-lambda-https
+      GroupName: !Sub ${OU}-security-group-${PlatForm}-${Project}-lambda-https
       VpcId: !ImportValue inf-vpc
       SecurityGroupIngress:
         - IpProtocol: "-1"

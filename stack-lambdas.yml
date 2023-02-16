@@ -4,13 +4,13 @@ Description: >-
   Failover stack with lambdas for failover, fallback etc
 
 Parameters:
-  orgUnit:
+  OU:
     Type: String
     Default: demo
-  envType:
+  PlatForm:
     Type: String
     Default: dev
-  appCode:
+  Project:
     Type: String
     Default: rds-infra
 
@@ -23,7 +23,7 @@ Resources:
     Type: AWS::Lambda::Function
     Condition: IsEast
     Properties:
-      FunctionName: !Sub ${orgUnit}-lambda-${envType}-${appCode}-planned-failover-2-east
+      FunctionName: !Sub ${OU}-lambda-${PlatForm}-${Project}-planned-failover-2-east
       Description: Planned Failover (Make East the Primary)
       Handler: index.handler
       MemorySize: 256
@@ -65,7 +65,7 @@ Resources:
     Type: AWS::Lambda::Function
     Condition: IsWest
     Properties:
-      FunctionName: !Sub ${orgUnit}-lambda-${envType}-${appCode}-planned-failover-2-west
+      FunctionName: !Sub ${OU}-lambda-${PlatForm}-${Project}-planned-failover-2-west
       Description: Planned Failover (Make West the Primary)
       Handler: index.handler
       MemorySize: 256
@@ -106,7 +106,7 @@ Resources:
     Type: AWS::Lambda::Function
     Condition: IsWest
     Properties:
-      FunctionName: !Sub ${orgUnit}-lambda-${envType}-${appCode}-detach-and-promote-west
+      FunctionName: !Sub ${OU}-lambda-${PlatForm}-${Project}-detach-and-promote-west
       Description: Unplanned Failover (Detach the West and Make a standalone Database)
       Handler: index.handler
       MemorySize: 256
